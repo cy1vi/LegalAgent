@@ -1,0 +1,58 @@
+{
+  "act": {
+    "has_violence": {"type": "bool"},
+    "violence_level": {
+      "type": "one_hot",
+      "values": ["minor", "moderate", "severe"]
+    },
+    "has_threat": {"type": "bool"},
+    "is_secret": {"type": "bool"},
+    "is_deceptive": {"type": "bool"},
+    "has_conspiracy": {"type": "bool"},
+    "used_tool": {"type": "bool"}
+  },
+  "object": {
+    "is_person": {"type": "bool"},
+    "is_property": {"type": "bool"},
+    "is_public_order": {"type": "bool"},
+    "is_state_interest": {"type": "bool"},
+    "property_type": {
+      "type": "one_hot",
+      "values": ["cash", "mobile", "vehicle", "other"]
+    }
+  },
+  "result": {
+    "injury": {"type": "bool"},
+    "injury_level": {
+      "type": "one_hot",
+      "values": ["minor_injury", "light_injury", "serious_injury"]
+    },
+    "death": {"type": "bool"},
+    "property_transferred": {"type": "bool"},
+    "amount_mentioned": {"type": "bool"},
+    "has_restitution": {"type": "bool"},
+    "has_forgiveness": {"type": "bool"},
+    "has_confession": {"type": "bool"}
+  },
+  "pattern": {
+    "behavior_pattern": {
+      "type": "one_hot",
+      "values": ["repeated", "continuous"]
+    },
+    "has_multiple_victims": {"type": "bool"}
+  },
+  "participation": {
+    "has_multiple_offenders": {"type": "bool"},
+    "has_organization": {"type": "bool"},
+    "role_description": {
+      "type": "one_hot",
+      "values": ["principal", "accomplice", "coerced_accomplice"]
+    }
+  },
+  "context": {
+    "is_indoor": {"type": "bool"},
+    "is_public_place": {"type": "bool"},
+    "is_night": {"type": "bool"},
+    "is_online": {"type": "bool"}
+  }
+}

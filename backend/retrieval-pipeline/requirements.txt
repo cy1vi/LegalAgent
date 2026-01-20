@@ -1,0 +1,19 @@
+# Core dependencies
+fastapi==0.110.0
+uvicorn==0.27.0
+pydantic==2.6.0
+python-multipart==0.0.9
+
+# BGE-Reranker model
+FlagEmbedding==1.2.11
+torch>=2.0.0
+transformers>=4.36.0
+sentencepiece>=0.1.99
+
+# Utilities
+requests>=2.31.0
+numpy>=1.24.0
+python-dotenv==1.0.0
+colorlog==6.8.0
+tqdm>=4.66.0
+orjson>=3.9.10

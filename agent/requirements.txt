@@ -1,0 +1,11 @@
+FastAPI
+uvicorn
+torch
+transformers
+numpy
+hnswlib
+faiss-cpu
+pydantic
+requests
+pytest
+loguru

@@ -1,0 +1,36 @@
+# =============================================
+# 行为模式（pattern）抽取规则
+# 仅用于初步判断是否“多次”或“多被害人”
+# =============================================
+
+behavior_pattern:
+  description: "行为模式：single（默认）| repeated（多次）| continuous（连续）"
+  type: mapping
+  mappings:
+    repeated:
+      keywords:
+        - "多次"
+        - "三次"
+        - "两三次"
+        - "数次"
+        - "屡次"
+    continuous:
+      keywords:
+        - "连续"
+        - "持续"
+        - "不间断"
+        - "在.*?期间.*?多次"
+        - "每日.*?实施"
+
+has_multiple_victims:
+  description: "是否涉及多名被害人"
+  type: regex
+  patterns:
+    - "多名被害人"
+    - "多名受害人"
+    - "分别对.*?人"
+    - "先后骗取.*?人"
+    - "被害人.*?等.*?人"
+    - "共.*?名被害人"
+    - '\d+名被害人'
+    - "多人"

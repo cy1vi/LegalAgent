@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+requests
+pydantic
+numpy
+scipy
+scikit-learn
+tqdm
+PyYAML
+python-dotenv
+orjson

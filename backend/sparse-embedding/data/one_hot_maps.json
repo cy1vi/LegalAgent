@@ -1,0 +1,92 @@
+{
+  "act.has_conspiracy": {
+    "True": 0
+  },
+  "act.has_threat": {
+    "True": 0
+  },
+  "act.has_violence": {
+    "True": 0
+  },
+  "act.is_deceptive": {
+    "True": 0
+  },
+  "act.is_secret": {
+    "True": 0
+  },
+  "act.used_tool": {
+    "True": 0
+  },
+  "act.violence_level": {
+    "minor": 0,
+    "moderate": 1,
+    "severe": 2
+  },
+  "context.is_indoor": {
+    "True": 0
+  },
+  "context.is_night": {
+    "True": 0
+  },
+  "context.is_online": {
+    "True": 0
+  },
+  "context.is_public_place": {
+    "True": 0
+  },
+  "object.is_person": {
+    "True": 0
+  },
+  "object.is_property": {
+    "True": 0
+  },
+  "object.is_public_order": {
+    "True": 0
+  },
+  "object.is_state_interest": {
+    "True": 0
+  },
+  "object.property_type": {
+    "cash": 0,
+    "mobile": 1,
+    "other": 2,
+    "vehicle": 3
+  },
+  "participation.has_multiple_offenders": {
+    "True": 0
+  },
+  "participation.has_organization": {
+    "True": 0
+  },
+  "participation.role_description": {
+    "accomplice": 0,
+    "coerced_accomplice": 1,
+    "principal": 2
+  },
+  "result.amount_mentioned": {
+    "True": 0
+  },
+  "result.death": {
+    "True": 0
+  },
+  "result.has_confession": {
+    "True": 0
+  },
+  "result.has_forgiveness": {
+    "True": 0
+  },
+  "result.has_restitution": {
+    "True": 0
+  },
+  "result.injury": {
+    "True": 0
+  },
+  "result.injury_level": {
+    "light_injury": 0,
+    "minor_injury": 1,
+    "serious_injury": 2
+  },
+  "result.property_transferred": {
+    "True": 0
+  }
+}

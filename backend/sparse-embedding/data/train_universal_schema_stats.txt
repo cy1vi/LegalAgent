@@ -1,0 +1,45 @@
+📊 Universal Fact Extraction Statistics
+==================================================
+Total cases processed: 1710856
+
+## ACT
+  act.has_conspiracy             : 129678 hits ( 7.58%)
+  act.has_threat                 :  26778 hits ( 1.57%)
+  act.has_violence               : 263772 hits (15.42%)
+  act.is_deceptive               :  87496 hits ( 5.11%)
+  act.is_secret                  :  92295 hits ( 5.39%)
+  act.used_tool                  : 198952 hits (11.63%)
+  act.violence_level             :  29159 hits ( 1.70%)
+    └─ Values: moderate(16948), minor(10134), severe(2077)
+
+## OBJECT
+  object.is_person               : 855450 hits (50.00%)
+  object.is_property             : 853710 hits (49.90%)
+  object.is_public_order         :  18598 hits ( 1.09%)
+  object.is_state_interest       :   6140 hits ( 0.36%)
+  object.property_type           : 1163652 hits (68.02%)
+    └─ Values: cash(648308), vehicle(454431), mobile(45848), other(15065)
+
+## RESULT
+  result.amount_mentioned        : 807252 hits (47.18%)
+  result.death                   : 174905 hits (10.22%)
+  result.has_confession          : 673403 hits (39.36%)
+  result.has_forgiveness         : 220247 hits (12.87%)
+  result.has_restitution         : 511444 hits (29.89%)
+  result.injury                  : 428518 hits (25.05%)
+  result.injury_level            : 280336 hits (16.39%)
+    └─ Values: light_injury(167041), minor_injury(71274), serious_injury(42021)
+  result.property_transferred    : 290926 hits (17.00%)
+
+## PARTICIPATION
+  participation.has_multiple_offenders : 214821 hits (12.56%)
+  participation.has_organization :  17243 hits ( 1.01%)
+  participation.role_description :  14085 hits ( 0.82%)
+    └─ Values: principal(7343), accomplice(6740), coerced_accomplice(2)
+
+## CONTEXT
+  context.is_indoor              : 279255 hits (16.32%)
+  context.is_night               : 318882 hits (18.64%)
+  context.is_online              : 199631 hits (11.67%)
+  context.is_public_place        : 328302 hits (19.19%)
+
