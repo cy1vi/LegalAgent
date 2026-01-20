@@ -6,7 +6,7 @@ from tqdm import tqdm
 
 # --- 自定义模块 ---
 from agent import LegalCaseSchemaExtractor
-from build_one_prompt import build_prompt_no_template as bp  # 使用新 prompt 模块（无模板）
+from build_one_prompt import build_prompt_no_template as bp  
 
 # --- 配置 ---
 INPUT_FILE = r"D:\deeplearning\project_learning\LegalAgent\dataset\final_all_data\first_stage\train.json"
