@@ -6,7 +6,6 @@ from typing import Dict, Any, List, Union
 from sklearn.metrics import accuracy_score, f1_score
 
 from agent import AgenticRAG
-
 from utils.batch_extractor import BatchCaseExtractor
 
 # 配置日志
@@ -24,6 +23,7 @@ logger = logging.getLogger(__name__)
 SEARCH_RESULTS_FILE = r"F:\LegalAgent\agent\src\datasets\search_results_300.jsonl"
 TRAIN_DATA_FILE = r"F:\LegalAgent\dataset\final_all_data\first_stage\train.json"
 OUTPUT_FILE = r"F:\LegalAgent\agent\src\output\evaluation_results.json"
+OUTPUT_JSONL_FILE = r"F:\LegalAgent\agent\src\output\evaluation_results.jsonl"
 
 class AgentEvaluator:
     def __init__(self):
@@ -31,8 +31,48 @@ class AgentEvaluator:
         self.batch_extractor = BatchCaseExtractor(max_workers=5)  # 初始化批量提取器
         self.train_data = self._load_train_data()
         self.n_references = 3  # 用于Prompt的参考案例数量
+        self.processed_ids = self._load_processed_ids()  # 加载已处理的ID
 
-
+    def _load_processed_ids(self) -> set:
+        """加载已处理的fact_id"""
+        processed_ids = set()
+        
+        # 检查JSONL格式的输出文件
+        if os.path.exists(OUTPUT_JSONL_FILE):
+            logger.info(f"检测到已存在的输出文件: {OUTPUT_JSONL_FILE}")
+            try:
+                with open(OUTPUT_JSONL_FILE, 'r', encoding='utf-8') as f:
+                    for line in f:
+                        line = line.strip()
+                        if not line:
+                            continue
+                        try:
+                            record = json.loads(line)
+                            fact_id = record.get('fact_id')
+                            if fact_id is not None:
+                                processed_ids.add(str(fact_id))
+                        except json.JSONDecodeError:
+                            continue
+                logger.info(f"已加载 {len(processed_ids)} 个已处理的fact_id")
+            except Exception as e:
+                logger.error(f"读取已处理文件失败: {e}")
+        
+        # 检查JSON格式的输出文件
+        elif os.path.exists(OUTPUT_FILE):
+            logger.info(f"检测到已存在的输出文件: {OUTPUT_FILE}")
+            try:
+                with open(OUTPUT_FILE, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    if 'details' in data:
+                        for record in data['details']:
+                            fact_id = record.get('fact_id')
+                            if fact_id is not None:
+                                processed_ids.add(str(fact_id))
+                logger.info(f"已加载 {len(processed_ids)} 个已处理的fact_id")
+            except Exception as e:
+                logger.error(f"读取已处理文件失败: {e}")
+        
+        return processed_ids
 
     def _load_train_data(self) -> Dict[str, Any]:
         """加载训练数据，用于查找top-5的详细信息"""
@@ -83,7 +123,6 @@ class AgentEvaluator:
             else:
                 logger.warning(f"未在训练集中找到ID: {doc_id_str}")
         return details
-
 
     def _construct_prompt(self, target_fact: str, structured_references: List[Dict[str, Any]]) -> str:
         """
@@ -150,10 +189,16 @@ class AgentEvaluator:
         results = []
         y_true = []
         y_pred = []
+        
+        # 统计信息
+        total_count = 0
+        processed_count = 0
+        skipped_count = 0
 
         try:
             with open(SEARCH_RESULTS_FILE, 'r', encoding='utf-8') as f:
                 for line in f:
+                    total_count += 1
                     try:
                         item = json.loads(line)
                         fact_id = item.get('fact_id')
@@ -161,7 +206,14 @@ class AgentEvaluator:
                         true_accusation = item.get('accusation')
                         top_5_ids = item.get('top_5_ids', [])
 
-                        logger.info(f"正在处理 fact_id: {fact_id}")
+                        # 检查是否已处理
+                        if str(fact_id) in self.processed_ids:
+                            logger.info(f"跳过已处理的 fact_id: {fact_id}")
+                            skipped_count += 1
+                            continue
+
+                        processed_count += 1
+                        logger.info(f"正在处理 fact_id: {fact_id} (第{processed_count}个)")
 
                         # 1. 获取参考案例详情 (取前 N 个)
                         top_n_ids = top_5_ids[:self.n_references]
@@ -240,22 +292,46 @@ class AgentEvaluator:
                         y_pred.append(self._clean_accusation(predicted_accusation))
 
                         # 实时写入文件 (JSONL格式)
-                        with open(OUTPUT_FILE + "l", 'a', encoding='utf-8') as out_f:
+                        with open(OUTPUT_JSONL_FILE, 'a', encoding='utf-8') as out_f:
                             out_f.write(json.dumps(result_record, ensure_ascii=False) + '\n')
 
                     except Exception as e:
                         logger.error(f"处理 fact_id {fact_id} 时出错: {e}")
+                        import traceback
+                        logger.error(traceback.format_exc())
                         continue
 
+            logger.info(f"处理完成。总计: {total_count}条，已处理: {processed_count}条，跳过: {skipped_count}条")
+
+            # 重新加载所有结果来计算最终指标
+            all_results = []
+            all_y_true = []
+            all_y_pred = []
+            
+            if os.path.exists(OUTPUT_JSONL_FILE):
+                with open(OUTPUT_JSONL_FILE, 'r', encoding='utf-8') as f:
+                    for line in f:
+                        line = line.strip()
+                        if not line:
+                            continue
+                        try:
+                            record = json.loads(line)
+                            all_results.append(record)
+                            all_y_true.append(self._clean_accusation(record.get('true_accusation')))
+                            all_y_pred.append(self._clean_accusation(record.get('predicted_accusation')))
+                        except json.JSONDecodeError:
+                            continue
+
             # 计算指标
-            if not y_true:
+            if not all_y_true:
                 logger.error("没有有效的结果用于计算指标")
                 return
 
-            accuracy = accuracy_score(y_true, y_pred)
-            macro_f1 = f1_score(y_true, y_pred, average='macro')
+            accuracy = accuracy_score(all_y_true, all_y_pred)
+            macro_f1 = f1_score(all_y_true, all_y_pred, average='macro')
 
             logger.info(f"评估完成。")
+            logger.info(f"总样本数: {len(all_y_true)}")
             logger.info(f"Accuracy: {accuracy:.4f}")
             logger.info(f"Macro-F1: {macro_f1:.4f}")
 
@@ -263,9 +339,10 @@ class AgentEvaluator:
             final_output = {
                 "metrics": {
                     "accuracy": accuracy,
-                    "macro_f1": macro_f1
+                    "macro_f1": macro_f1,
+                    "total_samples": len(all_y_true)
                 },
-                "details": results
+                "details": all_results
             }
 
             with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:

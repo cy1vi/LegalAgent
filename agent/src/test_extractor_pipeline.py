@@ -8,7 +8,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Any
 
-from utils.case_extractor import CaseExtractor
 from utils.batch_extractor import BatchCaseExtractor
 from config import Config
 

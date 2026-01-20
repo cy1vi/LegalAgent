@@ -1,311 +1,350 @@
-# Conversational Legal Advisor Agent for Case Analysis
+# 智能法律助手系统 (LegalAgent)
 
-## 1. Problem Statement
+## 项目概述
 
-The legal system is complex and opaque to most non-professionals. When individuals face legal issues, they often struggle to understand their situation, identify relevant facts, or anticipate potential outcomes. They lack the specialized knowledge to articulate their circumstances in a way that is meaningful for legal analysis. This project aims to develop a conversational AI agent that acts as a preliminary legal advisor. The agent will guide users through a structured conversation to gather the critical details of their situation, and then leverage a large database of past legal cases to provide insights, identify similar precedents, and explain the factors that may influence legal outcomes, such as the term of imprisonment.
+本项目是一个基于大语言模型（LLM）的智能法律助手系统，旨在帮助用户理解和分析法律案例。系统采用检索增强生成（RAG）技术，结合结构化信息提取和案例分析，为用户提供相关的法律建议和案例参考。
 
-## 2. Core Challenges
+## 核心架构
 
-The primary challenge is transforming a massive, unstructured dataset of legal case descriptions into a structured, queryable knowledge base and using it to power an intelligent conversational agent. This breaks down into several key difficulties:
+系统主要由三个核心模块组成：
 
-*   **Knowledge Structuring:** The "fact" descriptions in the CAIL dataset are narrative and unstructured. The core task is to extract the legally salient information and represent it in a consistent, structured format (i.e., defining and extracting "tags"). This requires identifying what elements of a case (e.g., severity of injury, presence of a weapon, mitigating circumstances) are determinative for the final judgment.
+1. **Backend（后端检索服务）**：提供混合检索能力，包括稠密检索和稀疏检索
+2. **Agent（智能代理）**：处理用户查询，整合检索结果并生成最终回答
+3. **Extraction（信息提取）**：从法律文本中提取结构化信息
+4. **Rules_YAML（规则定义）**：定义法律事实的结构化模式
 
-*   **Identifying Sentencing Factors:** It is not immediately obvious which factors from the case description have the most significant impact on the final sentence. A systematic approach is needed to analyze the structured data and quantify the relationships between case attributes and the length of imprisonment, to answer the question: "What really matters in my case?".
+## 详细功能说明
 
-*   **Guided Information Elicitation:** The agent must be more than a simple Q&A bot. It needs to "know what it doesn't know." Given a user's initial, often vague, description, the agent must intelligently ask targeted follow-up questions to elicit the specific details required for a meaningful case comparison and analysis. This requires an internal model of what information is necessary for different types of legal situations.
+### Backend - 检索服务
 
-*   **Case Retrieval and Relevance:** Once sufficient information is gathered, the system must efficiently search through thousands of cases to find the ones that are most analogous to the user's situation. Simple keyword search is insufficient; the matching must be based on the structured, legally relevant factors.
+Backend 模块负责从大量法律案例中检索相关信息，采用双路检索策略：
 
-## 3. Proposed Solution
+#### 1. 稠密检索（Dense Retrieval）
+- 使用 BERT 模型进行文本编码
+- 支持案情相似度的语义匹配
+- 适合处理复杂的案情描述
 
-We propose a three-stage solution that encompasses knowledge base construction, analytical modeling, and the development of a conversational agent.
+#### 2. 稀疏检索（Sparse Retrieval）
+- 基于 TF-IDF 和自定义正则化 schema 的文本检索
+- 支持精确的关键词匹配
+- 适合处理罪名、法条等专业术语
+- 当前 schema 急需优化，效果有待提升
 
-### 3.1 System Architecture Overview
+#### 项目结构
+```
+backend/
+├── data/                    # 数据存储目录
+├── dense-embedding/         # 稠密向量索引
+├── sparse-embedding/        # 稀疏向量索引
+├── retrieval-pipeline/      # 检索管道实现
+│   ├── main.py             # FastAPI 服务入口
+│   ├── config.py           # 配置文件
+│   ├── rerank.py           # 检索逻辑实现
+│   └── quick_test.py       # 测试脚本
+└── evaluate/                # 评估模块
+```
 
-The system will be composed of two main parts: an offline processing pipeline and an online conversational agent.
+### Agent - 智能代理
 
-*   **Offline Pipeline:** This pipeline will process the entire CAIL dataset. It will extract structured information from each case's "fact" description and build a hybrid knowledge base. It will also train a predictive model to analyze sentencing factors.
-*   **Online Agent:** This is the user-facing conversational interface. It will manage the dialogue, query the knowledge base, and use the predictive model to provide insights to the user.
+Agent 模块是系统的交互核心，负责处理用户输入并生成最终的回答：
 
-### 3.2 Stage 1: Knowledge Extraction and Structuring
+#### 主要功能
+- 接收用户输入的案情描述
+- 调用后端检索服务获取相关案例
+- 使用 LLM 对检索结果进行结构化处理
+- 将结构化后的相似案例及罪名提交给最终处理 LLM 进行判断
+- 生成易懂的法律分析结果
 
-This stage focuses on converting raw case text into a structured knowledge base. The central challenge is creating a schema that is comprehensive enough to capture the nuances of many different crime types while remaining consistent and manageable. We will employ a hybrid, data-driven strategy to achieve this.
+#### 当前状态
+- 系统基本功能已实现，效果良好
+- 实际效果仍有待提高
+- LLM 结构化提取能力需要进一步优化
+- 目前尚未提取被告身份信息，导致许多错误
+- 需要改进处理细节，特别是使用 RAG 技术提取罪名之间的定义特征差异
 
-1.  **Schema Strategy: A Hybrid, Data-Driven Approach**
+#### 项目结构
+```
+agent/
+├── src/                    # 源代码目录
+│   ├── agent.py           # 核心代理类实现
+│   ├── main.py            # 应用入口点
+│   ├── config.py          # 配置管理
+│   ├── tools.py           # 工具定义和实现
+│   ├── logger.py          # 日志配置
+│   ├── test_agent.py      # 单元测试
+│   ├── test_agent_batch.py # 批量测试
+│   ├── extractor_llm_test.py # 提取器测试
+│   ├── get_datasets.py    # 数据集获取
+│   ├── test_extractor_pipeline.py # 提取管道测试
+│   ├── .env              # 环境变量配置
+│   ├── logs/             # 日志目录
+│   ├── output/           # 输出目录
+│   └── utils/            # 工具函数
+│       ├── case_extractor.py # 案例提取器
+│       ├── batch_extractor.py # 批量提取器
+│       └── schema_process.py # 模式处理
+├── docs/                   # 文档目录
+├── tests/                  # 测试目录
+├── requirements.txt        # 依赖包列表
+└── README.md               # 项目说明文档
+```
 
-    We will create a modular, component-based schema rather than a single monolithic one. This involves a multi-step process:
+### Extraction - 信息提取
 
-    *   **a. Top-Down Thematic Grouping:** We will first programmatically analyze the entire dataset to identify all unique `accusation` values. These will be grouped into broader legal categories (e.g., "Crimes Against Persons," "Crimes Against Property," "White-Collar Crimes," "Public Order Offenses"). This provides a structured framework for our schema.
+Extraction 模块负责从法律文本中提取结构化信息：
 
-    *   **b. Core Schema + Extension Schemas:** We will define a two-level schema:
-        *   **`core_schema`**: Contains factors common across most criminal cases. This includes fields for `mitigating_factors` (like confession, compensation, surrender) and `aggravating_factors` (like recidivism, use of a weapon, leading role in a group crime).
-        *   **`extension_schemas`**: For each thematic group, we will define a specific extension. For instance, the "Crimes Against Persons" extension will include `victim_injury_level` and `number_of_victims`. The schema for "Financial Crimes" like "Bribery" (受贿) would include `amount_of_bribe` and `details_of_power_abuse`.
+#### 主要功能
+- 使用 LLM 进行法律事实提取
+- 基于 TF-IDF 的罪名词条提取
+- 支持多种 LLM 提供商（SiliconFlow、Doubao、Kimi、Moonshot 等）
+- 实现了增强的罪名关键词提取器
 
-2.  **Two-Pass LLM-Powered Extraction and Discovery**
+#### 项目结构
+```
+extraction/
+├── .env                           # 环境变量配置
+├── 202_factor_discovery.py        # 因素发现脚本
+├── agent.py                       # 提取代理
+├── build_one_prompt.py            # 构建单个提示
+├── build_prompt.py                # 构建提示模板
+├── compare.py                     # 比较脚本
+├── config.py                      # 配置文件
+├── enhanced_crime_keyword_extractor.py # 增强罪名关键词提取器
+├── extract_missing_crimes_keywords.py # 提取缺失罪名关键词
+├── factor_discovery_agent.py      # 因素发现代理
+├── tf_idf_test.py                 # TF-IDF 测试
+├── universal_fact_extractor.py    # 通用事实提取器
+└── stopwords.txt                  # 停用词表
+```
 
-    We will use a two-pass process to leverage the LLM for both factor discovery and structured data extraction.
+### Rules_YAML - 规则定义
 
-    *   **a. Pass 1: Automated Factor Discovery (Bottom-Up):** To ensure our schema is based on evidence from the data, we will first sample a few hundred cases from each thematic group. We will prompt an LLM with a broad instruction: "Analyze this legal case and list all key factors and circumstances that likely influenced the final judgment." The output from this discovery pass will be used to refine and validate the fields in our `core_schema` and `extension_schemas`, ensuring we capture the most salient information.
+Rules_YAML 模块定义了法律事实的结构化模式：
 
-    *   **b. Pass 2: Full Structured Extraction (Top-Down):** With the refined, modular schema in place, we will process the entire dataset. For each case, the LLM will be given a targeted prompt instructing it to populate the fields of both the `core_schema` and the specific `extension_schema` that corresponds to the case's crime type.
+#### 主要组件
+- `act.yaml` - 行为特征规则
+- `context.yaml` - 作案情境规则
+- `participation.yaml` - 参与方式规则
+- `pattern.yaml` - 行为模式规则
+- `result.yaml` - 结果特征规则
+- `universal_fact_schema.json` - 通用事实结构定义
 
-3.  **Knowledge Base Creation:** The extracted JSON objects, now consistently structured according to crime type, will be stored in a hybrid database. We recommend using a system like Elasticsearch or a PostgreSQL database with JSONB support. This allows for both:
-    *   **Structured Filtering:** Exact queries on specific fields (e.g., `victim_injury_level: "重伤二级"` AND `use_of_weapon: true`).
-    *   **Full-Text Search:** Searching the original `fact` text.
-    Additionally, we can generate vector embeddings of the `fact` text to enable semantic similarity searches.
+#### 项目结构
+```
+rules_yaml/
+├── act.yaml                      # 行为特征规则
+├── context.yaml                  # 作案情境规则
+├── participation.yaml            # 参与方式规则
+├── pattern.yaml                  # 行为模式规则
+├── result.yaml                   # 结果特征规则
+└── universal_fact_schema.json    # 通用事实结构定义
+```
 
-### 3.3 Stage 2: Case Grouping and Factor Analysis
+## 当前进展与挑战
 
-Instead of training a traditional regression model to predict sentences, we will use an analytical, unsupervised approach to discover the natural structure within the case data. The goal is to group similar cases into "archetypes" and identify the factors that define these groups. This method is more robust and provides deeper insights than a simple predictive model.
+### 已实现功能
+- 基础的混合检索系统（稠密+稀疏）
+- 智能代理框架，支持结构化信息处理
+- 法律事实提取和结构化
+- 多 LLM 提供商支持
 
-1.  **Case Vectorization:** For each crime category, the extracted structured data will be converted into a composite numerical vector. This is not a text embedding, but a structured representation built by processing each factor type appropriately and concatenating the results:
-    *   **Categorical Features** (e.g., `victim_injury_level`, `weapon_type`): These will be converted using **One-Hot Encoding**, creating a binary column for each possible category.
-    *   **Boolean and Tag-List Features** (e.g., `use_of_weapon`, `mitigating_factors`): These will be represented using **Multi-Hot Encoding**, creating a binary vector where each position corresponds to a specific factor and is marked '1' if present.
-    *   **Numerical Features** (e.g., `punish_of_money`): To handle skewed distributions, these will first undergo a **log transformation** and then be normalized using **Standard Scaling**.
-    This composite vector provides a comprehensive numerical fingerprint of each case for the clustering algorithm.
+### 存在的问题
+1. **LLM 结构化提取优化**：
+   - 当前 LLM 在提取结构化信息方面仍有待优化
+   - 特别是被告身份信息的提取缺失，导致许多错误
+   - 需要进一步完善处理细节
 
-2.  **Clustering for Archetype Discovery:** We will use a density-based clustering algorithm like HDBSCAN on these vectors. This will group the cases into distinct clusters, where each cluster represents a common archetype of that crime (e.g., for assault, one cluster might be "minor disputes with no weapons," while another is "group assaults with serious injuries"). This approach has the advantage of not requiring us to pre-specify the number of archetypes.
-3.  **Defining Cluster Characteristics:** Once the clusters are identified, we will analyze the feature distribution within each cluster and compare it to the overall dataset. The factors that are most over-represented or under-represented in a cluster are the ones that define it. For instance, if 90% of cases in a cluster involve `compensation_paid`, that becomes a key characteristic of that archetype.
-4.  **Deriving the Factor Importance Hierarchy:** The "Factor Importance Hierarchy" will be derived directly from this clustering analysis. The factors that are most effective at separating cases into distinct, meaningful clusters (especially those with different sentencing outcomes) are deemed the most important. This can be quantified using statistical measures like mutual information or feature variance between clusters. This data-driven hierarchy of factors is the primary output of this stage and will be the core of the agent's intelligence.
+2. **检索效果提升**：
+   - 目前检索无法直接达到 recall@5 100% 的效果
+   - 导致 Agent 无法处理很多内容
+   - 计划加入相似罪名检索功能，而非仅依赖重排序对比
 
-### 3.4 Stage 3: Conversational Agent and Case Retrieval
+3. **Schema 优化**：
+   - 稀疏检索使用的自定义正则化 schema 急需修改
+   - 当前效果较差，需要重新设计
 
-This stage defines the user interaction logic, which is explicitly driven by the Factor Importance Hierarchy derived from the case grouping analysis in Stage 2.
+4. **罪名特征差异提取**：
+   - 需要使用 RAG 技术提取不同罪名之间的定义特征差异
+   - 这将有助于更精确的案例匹配和分析
 
-### 3.5 Agent Implementation and Logic
+### 解决方案方向
+- 改进 LLM 提示工程，提高结构化提取准确性
+- 引入相似罪名检索机制，扩展检索范围
+- 优化稀疏检索的 schema 设计
+- 实现罪名间特征差异的 RAG 提取功能
 
-To implement the agent's conversational and reasoning capabilities, we will adopt the **ReAct (Reasoning and Acting)** framework, similar to the architecture used in the `agentic-rag` project. This paradigm allows the agent to intelligently cycle through thoughts, actions, and observations to achieve its goals in a flexible and dynamic way.
-
-**1. ReAct Agent Architecture**
-
-Instead of a rigid pipeline, the agent will be a single, powerful LLM prompted to operate in a ReAct loop. It will have access to a specific set of tools to interact with its environment.
-
-*   **The ReAct Prompt:** The agent's core logic will be guided by a master prompt that instructs it to reason about its current state and choose the next best action. The loop is as follows:
-    1.  **Thought:** The agent analyzes the user's query and its internal state (what it knows). It decides what information is missing and what its goal is for the current turn.
-    2.  **Action:** Based on its thought, the agent chooses a tool to execute and specifies the parameters for it.
-    3.  **Observation:** The agent receives the output from the tool, which becomes the input for the next thought cycle.
-
-*   **Core Components:**
-    *   **LLM:** A powerful large language model serves as the central reasoning engine for the agent.
-    *   **State Tracker:** A simple dictionary that stores the conversation history and all extracted factors (`slots`) gathered so far. This is the agent's memory.
-    *   **Tool Library:** A set of functions the agent can call to perform actions.
-
-**2. Specialized Tools for the Legal Agent**
-
-The agent's capabilities will be defined by its specialized tools:
-
-*   **`GenerateGuidedQuestionnaire(crime_type: str, known_factors: dict)`:**
-    *   **Purpose:** This is the primary tool for gathering information from the user.
-    *   **Logic:** It takes the classified crime type and the currently known factors. It looks up the pre-computed **Factor Importance Hierarchy** for that crime. It then identifies the most important factors that are still unknown and constructs the full questionnaire, complete with explanations for each question.
-    *   **Output:** Returns a single, formatted string to be presented to the user.
-
-*   **`QueryKnowledgeBase(crime_type: str, known_factors: dict)`:**
-    *   **Purpose:** To find analogous cases in the structured database.
-    *   **Logic:** It takes the collected factors and constructs the weighted query for the knowledge base (e.g., Elasticsearch), using hard filters and boosted scoring as previously described.
-    *   **Output:** Returns a structured list of the top N matching cases.
-
-*   **`SynthesizeCaseAnalysis(retrieved_cases: list, user_factors: dict)`:**
-    *   **Purpose:** To generate the final, human-readable summary.
-    *   **Logic:** It takes the retrieved cases and the user's situation. It identifies the case archetype, calculates the typical sentencing range for those cases, and formulates a nuanced, easy-to-understand explanation for the user, including the all-important disclaimers.
-    *   **Output:** Returns the final analysis text for the user.
-
-**3. Example ReAct Conversational Flow**
-
-1.  **User Input:** "I got into a fight and the other person was hurt."
-2.  **Cycle 1:**
-    *   **Thought:** The user has described a situation that sounds like "Intentional Injury." I have very little information. I need to gather the key facts. My next action should be to generate the standard questionnaire for this type of crime.
-    *   **Action:** `GenerateGuidedQuestionnaire(crime_type="Intentional Injury", known_factors={})`
-    *   **Observation:** (The agent receives the formatted questionnaire string from the tool.)
-    *(The agent presents this questionnaire to the user.)*
-3.  **User Response:** (The user answers the questions about injury severity, weapons, compensation, etc.)
-4.  **Cycle 2:**
-    *   **Thought:** The user has answered the questionnaire. I have now extracted the key factors: `injury_level="serious"`, `weapon_used=false`, `compensation_paid=true`. I have enough information to find similar cases. My next action is to query the knowledge base.
-    *   **Action:** `QueryKnowledgeBase(crime_type="Intentional Injury", known_factors={"injury_level": "serious", ...})`
-    *   **Observation:** (The agent receives a list of the top 5 most similar cases from the KB.)
-5.  **Cycle 3:**
-    *   **Thought:** I have the most relevant cases. Now I need to analyze them and present a clear summary to the user. My final action is to synthesize these findings.
-    *   **Action:** `SynthesizeCaseAnalysis(retrieved_cases=[...], user_factors={"injury_level": "serious", ...})`
-    *   **Observation:** (The agent receives the final summary text.)
-    *(The agent presents the final analysis to the user.)*
-
-This ReAct-based approach provides a clear, powerful, and auditable framework for building our intelligent legal advisor.
-
-### 3.6 Result Presentation and Synthesis
-
-Once the most relevant cases are retrieved, the agent moves to the final stage of synthesizing and presenting the information. Leveraging the cluster analysis, the agent can provide more nuanced insights:
-
-*   It can identify the case archetype the user's situation belongs to: "Your situation appears similar to a common group of cases characterized by [Key Factor 1] and [Key Factor 2]."
-*   It will present the typical sentencing range for that specific group: "In this group of cases, sentences typically range from X to Y months."
-*   It will highlight the key differentiators learned from the analysis: "A critical factor we've seen in these cases is [Important Factor C]. How does that apply to your situation?"
-*   This approach, grounded in data-driven archetypes, allows the agent to provide explanations that are more concrete and understandable than a simple statistical prediction.
-
-## 5. Data
-
-The project will use the **CAIL2018 dataset**, specifically the large-scale collection of criminal legal documents. The dataset's JSON structure, with a clear `fact` and `meta` (outcome) separation, is ideal for this supervised learning and extraction task.
-
-## 6. Evaluation
-
-The system's performance will be evaluated across its different components:
-*   **Knowledge Extraction:** The accuracy of the LLM-based extraction can be measured by creating a small, manually-annotated "gold standard" set of structured cases and calculating precision, recall, and F1-score against it.
-*   **Case Grouping Quality:** The quality of the discovered case archetypes can be evaluated using clustering metrics like the Silhouette Score. We can also perform qualitative analysis to ensure the clusters are legally coherent and meaningful.
-*   **Conversational Agent:** Agent quality can be assessed through user studies, measuring task success rate (was the user able to get relevant case information?), conversation length, and user satisfaction scores.
-
-## 7. Ethical Considerations & Disclaimers
-
-This is of paramount importance. The agent must repeatedly and clearly state that it is **not a lawyer** and that its output **does not constitute legal advice**. All information should be presented as being for educational and informational purposes only. The system should strongly encourage users to consult with a qualified legal professional for advice on their specific situation. The potential for misuse or over-reliance on the agent's suggestions must be mitigated through careful design of its conversational script and user interface.
-
-## 8. Project Structure
+## 项目结构总览
 
 ```
 LegalAgent/
-├── agent/                    # Main agent implementation
-│   ├── src/                  # Source code
-│   │   ├── agent.py          # Main agent logic with ReAct framework
-│   │   ├── config.py         # Configuration management
-│   │   ├── tools.py          # Tool definitions for the agent
-│   │   ├── main.py           # Entry point for testing/evaluation
-│   │   └── utils/            # Utility functions
-│   ├── requirements.txt      # Python dependencies
-│   └── README.md             # Agent-specific documentation
-├── Agent_test/               # Agent testing and evaluation
-│   ├── agent.py              # Alternative agent implementation
-│   ├── requirements.txt      # Dependencies for testing
-│   └── README.md             # Testing documentation
-├── RAG4Law/                  # RAG implementation
-│   ├── README.md             # RAG system documentation
-│   └── requirements.txt      # RAG dependencies
-├── extraction/               # Knowledge extraction pipeline
-├── law_process/              # Legal data processing
-├── rules_yaml/               # Rule definitions in YAML format
-├── dataset/                  # Dataset files
-├── backend/                  # Backend services
-├── 项目方案.md               # Detailed project plan (Chinese)
-├── README.md                 # This file (main project documentation)
-└── requirements.txt          # Main project dependencies
+├── agent/                        # 智能代理模块
+├── Agent_test/                   # 代理测试模块
+├── RAG4Law/                      # RAG 实现
+├── backend/                      # 后端检索服务
+├── extraction/                   # 信息提取模块
+├── law_process/                  # 法律数据处理
+├── rules_yaml/                   # 规则定义
+├── dataset/                      # 数据集
+├── model/                        # 模型文件
+├── cluster/                      # 聚类分析
+├── 202_crimes_keywords.json      # 罪名关键词数据
+├── 项目方案.md                    # 详细项目计划（中文）
+├── README.md                     # 项目说明文档
+└── requirements.txt              # 主项目依赖
 ```
 
-## 9. Installation
+## 安装与部署
 
-### Prerequisites
-- Python 3.8 or higher
-- pip package manager
+### 环境要求
+- Python 3.8 或更高版本
+- pip 包管理器
 
-### Setup Instructions
+### 安装步骤
 
-1. Clone the repository:
+1. 克隆项目：
 ```bash
 git clone <repository-url>
 cd LegalAgent
 ```
 
-2. Create a virtual environment (recommended):
+2. 创建虚拟环境（推荐）：
 ```bash
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate  # Windows: venv\Scripts\activate
 ```
 
-3. Install the required dependencies:
+3. 安装主项目依赖：
 ```bash
 pip install -r requirements.txt
 ```
 
-4. For specific modules, install their respective requirements:
+4. 安装各模块依赖：
 ```bash
 cd agent
 pip install -r requirements.txt
-cd ../Agent_test
+cd ../backend
 pip install -r requirements.txt
-cd ../RAG4Law
+cd ../extraction
 pip install -r requirements.txt
 ```
 
-5. Set up environment variables by copying the example file:
+5. 设置环境变量：
 ```bash
 cp env.example .env
-# Edit .env to add your API keys and configurations
+# 编辑 .env 文件，填入相应的 API 密钥和其他配置
 ```
 
-## 10. Usage
+## 使用方法
 
-### Running the Agent
+### 启动后端检索服务
 
-1. Navigate to the agent directory:
+1. 进入检索管道目录：
 ```bash
-cd agent/src
+cd backend/retrieval-pipeline
 ```
 
-2. Run the main application (currently basic test implementation):
+2. 启动服务：
 ```bash
 python main.py
 ```
 
-### Testing and Evaluation
+### 运行智能代理
 
-1. For batch testing of the agent:
+1. 进入代理目录：
+```bash
+cd agent/src
+```
+
+2. 运行主应用：
+```bash
+python main.py
+```
+
+### 测试与评估
+
+1. 批量测试代理：
 ```bash
 cd Agent_test
 python test_agent_batch.py
 ```
 
-2. For individual query testing:
+2. 单次查询测试：
 ```bash
 python test_one_query.py
 ```
 
-### Knowledge Extraction Pipeline
+### 知识提取流程
 
-1. To run the knowledge extraction pipeline:
+1. 运行知识提取管道：
 ```bash
 cd extraction
 python enhanced_crime_keyword_extractor.py
 ```
 
-2. To build prompts for extraction:
+2. 构建提取提示：
 ```bash
 python build_prompt.py
 ```
 
-### RAG System
+## 配置说明
 
-1. To run the RAG system with contextual retrieval:
-```bash
-cd RAG4Law
-python main.py
-```
+系统通过环境变量进行配置。复制 `env.example` 到 `.env` 并填写 API 密钥和其他设置。主要配置选项包括：
 
-2. To index legal documents with contextual enhancement:
-```bash
-python index_local_laws_contextual.py
-```
+- `LLM_PROVIDER`: LLM 提供商（如 siliconflow, openai, kimi, doubao）
+- `LLM_MODEL`: 使用的具体模型
+- 各种提供商的 API 密钥（MOONSHOT_API_KEY, ARK_API_KEY 等）
+- 知识库设置（KB_TYPE, host, port 等）
 
-## 11. Configuration
+## 当前系统特点
 
-The system uses environment variables for configuration. Copy `env.example` to `.env` and fill in your API keys and settings. Key configuration options include:
+### 优势
+- 采用混合检索策略，结合稠密和稀疏检索的优势
+- 使用结构化信息提取，提高案例匹配精度
+- 支持多种 LLM 提供商，灵活适应不同场景
+- 模块化设计，便于维护和扩展
 
-- `LLM_PROVIDER`: The LLM provider to use (e.g., openrouter, openai, kimi, doubao)
-- `LLM_MODEL`: Specific model to use
-- Various API keys for different providers (MOONSHOT_API_KEY, ARK_API_KEY, etc.)
-- Knowledge base settings (KB_TYPE, host, port, etc.)
+### 待优化方向
+- 提高 LLM 结构化提取的准确性，特别是被告身份信息
+- 优化稀疏检索的 schema，提升检索效果
+- 实现罪名间特征差异的 RAG 提取功能
+- 增加相似罪名检索机制，扩大检索覆盖范围
 
-## 12. Contributing
+## 技术栈
 
-We welcome contributions to the LegalAgent project! Here's how you can contribute:
+- Python 3.8+
+- PyTorch/TensorFlow (用于模型)
+- FastAPI (用于后端服务)
+- Elasticsearch (用于检索)
+- HanLP (用于中文自然语言处理)
+- 各种 LLM 提供商 API
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Make your changes
-4. Commit your changes (`git commit -m 'Add some amazing feature'`)
-5. Push to the branch (`git push origin feature/amazing-feature`)
-6. Open a Pull Request
+## 未来发展方向
 
-Please ensure your code follows the project's style guidelines and passes all tests before submitting a PR.
+1. **增强结构化提取能力**：改进 LLM 提示工程，提高信息提取准确性
+2. **优化检索算法**：引入更先进的检索技术，提升召回率和准确率
+3. **扩展法律领域覆盖**：增加更多法律领域的案例和规则
+4. **提升用户体验**：优化交互界面和响应速度
+5. **加强法律合规性**：确保系统输出符合法律规范和伦理要求
 
-## 13. License
+## 贡献指南
 
-This project is licensed under the MIT License - see the LICENSE file for details. Note that certain components may have different licensing terms, particularly when integrating with external APIs or datasets with specific usage restrictions.
+我们欢迎对 LegalAgent 项目的贡献！以下是贡献方式：
 
-## 14. Acknowledgments
+1. Fork 仓库
+2. 创建功能分支 (`git checkout -b feature/awesome-feature`)
+3. 进行修改
+4. 提交更改 (`git commit -m 'Add awesome feature'`)
+5. 推送到分支 (`git push origin feature/awesome-feature`)
+6. 开启 Pull Request
 
-- The CAIL2018 dataset for providing the legal case data
-- Open-source libraries that made this project possible
-- The legal professionals who provided domain expertise during development
+请确保您的代码遵循项目风格指南，并在提交 PR 前通过所有测试。
+
+## 许可证
+
+本项目采用 MIT 许可证 - 详见 LICENSE 文件。请注意，某些组件可能有不同的许可条款，特别是在集成外部 API 或具有特定使用限制的数据集时。
+
+## 致谢
+
+- CAIL2018 数据集提供法律案例数据
+- 开源库使本项目成为可能
+- 在开发过程中提供领域专业知识的法律专业人士
