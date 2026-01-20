@@ -1,0 +1,7 @@
+https://cail.oss-cn-qingdao.aliyuncs.com/CAIL2018_ALL_DATA.zip
+
+下载解压到该目录下
+|---dataset
+       |
+       |-----final_all_data
+       |-----laws

@@ -178,10 +178,7 @@ LegalAgent/
 ├── law_process/              # Legal data processing
 ├── rules_yaml/               # Rule definitions in YAML format
 ├── dataset/                  # Dataset files
-├── model/                    # ML models
 ├── backend/                  # Backend services
-├── cluster/                  # Clustering analysis scripts
-├── 202_crimes_keywords.json  # Crime keywords data
 ├── 项目方案.md               # Detailed project plan (Chinese)
 ├── README.md                 # This file (main project documentation)
 └── requirements.txt          # Main project dependencies
