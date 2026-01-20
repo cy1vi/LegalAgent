@@ -153,3 +153,162 @@ The system's performance will be evaluated across its different components:
 ## 7. Ethical Considerations & Disclaimers
 
 This is of paramount importance. The agent must repeatedly and clearly state that it is **not a lawyer** and that its output **does not constitute legal advice**. All information should be presented as being for educational and informational purposes only. The system should strongly encourage users to consult with a qualified legal professional for advice on their specific situation. The potential for misuse or over-reliance on the agent's suggestions must be mitigated through careful design of its conversational script and user interface.
+
+## 8. Project Structure
+
+```
+LegalAgent/
+├── agent/                    # Main agent implementation
+│   ├── src/                  # Source code
+│   │   ├── agent.py          # Main agent logic with ReAct framework
+│   │   ├── config.py         # Configuration management
+│   │   ├── tools.py          # Tool definitions for the agent
+│   │   ├── main.py           # Entry point for testing/evaluation
+│   │   └── utils/            # Utility functions
+│   ├── requirements.txt      # Python dependencies
+│   └── README.md             # Agent-specific documentation
+├── Agent_test/               # Agent testing and evaluation
+│   ├── agent.py              # Alternative agent implementation
+│   ├── requirements.txt      # Dependencies for testing
+│   └── README.md             # Testing documentation
+├── RAG4Law/                  # RAG implementation
+│   ├── README.md             # RAG system documentation
+│   └── requirements.txt      # RAG dependencies
+├── extraction/               # Knowledge extraction pipeline
+├── law_process/              # Legal data processing
+├── rules_yaml/               # Rule definitions in YAML format
+├── dataset/                  # Dataset files
+├── model/                    # ML models
+├── backend/                  # Backend services
+├── cluster/                  # Clustering analysis scripts
+├── 202_crimes_keywords.json  # Crime keywords data
+├── 项目方案.md               # Detailed project plan (Chinese)
+├── README.md                 # This file (main project documentation)
+└── requirements.txt          # Main project dependencies
+```
+
+## 9. Installation
+
+### Prerequisites
+- Python 3.8 or higher
+- pip package manager
+
+### Setup Instructions
+
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd LegalAgent
+```
+
+2. Create a virtual environment (recommended):
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
+
+3. Install the required dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+4. For specific modules, install their respective requirements:
+```bash
+cd agent
+pip install -r requirements.txt
+cd ../Agent_test
+pip install -r requirements.txt
+cd ../RAG4Law
+pip install -r requirements.txt
+```
+
+5. Set up environment variables by copying the example file:
+```bash
+cp env.example .env
+# Edit .env to add your API keys and configurations
+```
+
+## 10. Usage
+
+### Running the Agent
+
+1. Navigate to the agent directory:
+```bash
+cd agent/src
+```
+
+2. Run the main application (currently basic test implementation):
+```bash
+python main.py
+```
+
+### Testing and Evaluation
+
+1. For batch testing of the agent:
+```bash
+cd Agent_test
+python test_agent_batch.py
+```
+
+2. For individual query testing:
+```bash
+python test_one_query.py
+```
+
+### Knowledge Extraction Pipeline
+
+1. To run the knowledge extraction pipeline:
+```bash
+cd extraction
+python enhanced_crime_keyword_extractor.py
+```
+
+2. To build prompts for extraction:
+```bash
+python build_prompt.py
+```
+
+### RAG System
+
+1. To run the RAG system with contextual retrieval:
+```bash
+cd RAG4Law
+python main.py
+```
+
+2. To index legal documents with contextual enhancement:
+```bash
+python index_local_laws_contextual.py
+```
+
+## 11. Configuration
+
+The system uses environment variables for configuration. Copy `env.example` to `.env` and fill in your API keys and settings. Key configuration options include:
+
+- `LLM_PROVIDER`: The LLM provider to use (e.g., openrouter, openai, kimi, doubao)
+- `LLM_MODEL`: Specific model to use
+- Various API keys for different providers (MOONSHOT_API_KEY, ARK_API_KEY, etc.)
+- Knowledge base settings (KB_TYPE, host, port, etc.)
+
+## 12. Contributing
+
+We welcome contributions to the LegalAgent project! Here's how you can contribute:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes
+4. Commit your changes (`git commit -m 'Add some amazing feature'`)
+5. Push to the branch (`git push origin feature/amazing-feature`)
+6. Open a Pull Request
+
+Please ensure your code follows the project's style guidelines and passes all tests before submitting a PR.
+
+## 13. License
+
+This project is licensed under the MIT License - see the LICENSE file for details. Note that certain components may have different licensing terms, particularly when integrating with external APIs or datasets with specific usage restrictions.
+
+## 14. Acknowledgments
+
+- The CAIL2018 dataset for providing the legal case data
+- Open-source libraries that made this project possible
+- The legal professionals who provided domain expertise during development
